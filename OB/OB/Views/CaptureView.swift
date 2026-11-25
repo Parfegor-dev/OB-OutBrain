@@ -49,9 +49,13 @@ struct CaptureView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(trimmedText.isEmpty)
 
-                Text("Записано сегодня: \(todayCaptures.count)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                NavigationLink {
+                    CaptureListView()
+                } label: {
+                    Label("Записано сегодня: \(todayCaptures.count)", systemImage: "tray.full")
+                        .font(.subheadline)
+                }
+                .foregroundStyle(.secondary)
 
                 if showSavedConfirmation {
                     Text("Записано")

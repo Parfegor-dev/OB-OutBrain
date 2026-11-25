@@ -14,6 +14,7 @@ struct ParkingView: View {
 
     @State private var showAddAlert = false
     @State private var newTitle = ""
+    @State private var editingIdea: Idea?
 
     var body: some View {
         NavigationStack {
@@ -39,6 +40,10 @@ struct ParkingView: View {
                                 Text(idea.createdAt.formatted(date: .abbreviated, time: .omitted))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                editingIdea = idea
                             }
                             .swipeActions(edge: .leading) {
                                 Button {
@@ -71,6 +76,9 @@ struct ParkingView: View {
                 TextField("Название", text: $newTitle)
                 Button("Добавить", action: add)
                 Button("Отмена", role: .cancel) { newTitle = "" }
+            }
+            .sheet(item: $editingIdea) { idea in
+                IdeaEditView(idea: idea)
             }
         }
     }

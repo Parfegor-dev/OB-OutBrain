@@ -13,6 +13,7 @@ struct TaskEditView: View {
     @Environment(\.dismiss) private var dismiss
 
     let task: TaskItem?
+    let onSaved: (() -> Void)?
 
     @Query private var projects: [Project]
 
@@ -25,15 +26,16 @@ struct TaskEditView: View {
     @State private var notes: String
     @State private var reminders: [Reminder]
 
-    init(task: TaskItem? = nil) {
+    init(task: TaskItem? = nil, prefillTitle: String = "", prefillNotes: String = "", onSaved: (() -> Void)? = nil) {
         self.task = task
-        _title = State(initialValue: task?.title ?? "")
+        self.onSaved = onSaved
+        _title = State(initialValue: task?.title ?? prefillTitle)
         _priority = State(initialValue: task?.priority ?? TaskPriority.medium)
         _hasDeadline = State(initialValue: task.map { $0.deadline != nil } ?? false)
         _deadline = State(initialValue: task?.deadline ?? Date())
         _estimateText = State(initialValue: task?.estimateMin.map(String.init) ?? "")
         _projectId = State(initialValue: task?.projectId)
-        _notes = State(initialValue: task?.notes ?? "")
+        _notes = State(initialValue: task?.notes ?? prefillNotes)
         _reminders = State(initialValue: task?.reminders ?? [])
     }
 
@@ -133,6 +135,7 @@ struct TaskEditView: View {
         }
         try? modelContext.save()
         NotificationService.syncReminders(for: savedTask)
+        onSaved?()
         dismiss()
     }
 }
