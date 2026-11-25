@@ -30,7 +30,7 @@ struct OBApp: App {
 
     var body: some Scene {
         WindowGroup {
-            CaptureView()
+            RootView()
                 .preferredColorScheme(.dark)
         }
         .modelContainer(sharedModelContainer)
