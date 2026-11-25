@@ -12,7 +12,6 @@ import SwiftData
 struct OBApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
             Capture.self,
             TaskItem.self,
             Project.self,
@@ -31,7 +30,8 @@ struct OBApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            CaptureView()
+                .preferredColorScheme(.dark)
         }
         .modelContainer(sharedModelContainer)
     }
