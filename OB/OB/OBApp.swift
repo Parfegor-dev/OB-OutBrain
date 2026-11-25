@@ -13,6 +13,12 @@ struct OBApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
+            Capture.self,
+            TaskItem.self,
+            Project.self,
+            Habit.self,
+            Idea.self,
+            DayPlan.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
