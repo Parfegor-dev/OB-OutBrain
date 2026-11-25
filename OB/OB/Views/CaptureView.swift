@@ -25,49 +25,62 @@ struct CaptureView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                TextEditor(text: $text)
-                    .focused($inputFocused)
-                    .frame(minHeight: 120)
-                    .padding(4)
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(alignment: .topLeading) {
-                        if text.isEmpty {
-                            Text("Выгрузи кашу из головы…")
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 9)
-                                .padding(.vertical, 12)
-                                .allowsHitTesting(false)
+            ScrollView {
+                VStack(spacing: 16) {
+                    TextEditor(text: $text)
+                        .focused($inputFocused)
+                        .frame(minHeight: 120)
+                        .padding(4)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(alignment: .topLeading) {
+                            if text.isEmpty {
+                                Text("Выгрузи кашу из головы…")
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 9)
+                                    .padding(.vertical, 12)
+                                    .allowsHitTesting(false)
+                            }
                         }
+
+                    Button(action: save) {
+                        Text("Записать")
+                            .frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(trimmedText.isEmpty)
 
-                Button(action: save) {
-                    Text("Записать")
-                        .frame(maxWidth: .infinity)
+                    NavigationLink {
+                        CaptureListView()
+                    } label: {
+                        Label("Записано сегодня: \(todayCaptures.count)", systemImage: "tray.full")
+                            .font(.subheadline)
+                    }
+                    .foregroundStyle(.secondary)
+
+                    if showSavedConfirmation {
+                        Text("Записано")
+                            .font(.subheadline)
+                            .foregroundStyle(.green)
+                            .transition(.opacity)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(trimmedText.isEmpty)
-
-                NavigationLink {
-                    CaptureListView()
-                } label: {
-                    Label("Записано сегодня: \(todayCaptures.count)", systemImage: "tray.full")
-                        .font(.subheadline)
-                }
-                .foregroundStyle(.secondary)
-
-                if showSavedConfirmation {
-                    Text("Записано")
-                        .font(.subheadline)
-                        .foregroundStyle(.green)
-                        .transition(.opacity)
-                }
-
-                Spacer()
+                .padding()
             }
-            .padding()
+            .scrollDismissesKeyboard(.interactively)
+            .scrollBounceBehavior(.always)
+            .onTapGesture {
+                inputFocused = false
+            }
             .navigationTitle("Захват")
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Скрыть") {
+                        inputFocused = false
+                    }
+                }
+            }
             .onAppear { inputFocused = true }
         }
     }
