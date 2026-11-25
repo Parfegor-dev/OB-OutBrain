@@ -32,8 +32,9 @@ final class TaskItem {
     var status: TaskStatus = TaskStatus.todo
     var estimateMin: Int?
     var sourceCaptureId: UUID?
+    var completedAt: Date?
 
-    init(id: UUID = UUID(), title: String, notes: String = "", projectId: UUID? = nil, deadline: Date? = nil, priority: TaskPriority = .medium, status: TaskStatus = .todo, estimateMin: Int? = nil, sourceCaptureId: UUID? = nil) {
+    init(id: UUID = UUID(), title: String, notes: String = "", projectId: UUID? = nil, deadline: Date? = nil, priority: TaskPriority = .medium, status: TaskStatus = .todo, estimateMin: Int? = nil, sourceCaptureId: UUID? = nil, completedAt: Date? = nil) {
         self.id = id
         self.title = title
         self.notes = notes
@@ -43,5 +44,6 @@ final class TaskItem {
         self.status = status
         self.estimateMin = estimateMin
         self.sourceCaptureId = sourceCaptureId
+        self.completedAt = completedAt
     }
 }

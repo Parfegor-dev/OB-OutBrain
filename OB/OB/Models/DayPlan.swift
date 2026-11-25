@@ -26,3 +26,20 @@ final class DayPlan {
         self.items = items
     }
 }
+
+extension DayPlan {
+    static func existingToday(in context: ModelContext) -> DayPlan? {
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        let predicate = #Predicate<DayPlan> { $0.date == startOfDay }
+        return try? context.fetch(FetchDescriptor<DayPlan>(predicate: predicate)).first
+    }
+
+    static func today(in context: ModelContext) -> DayPlan {
+        if let existing = existingToday(in: context) {
+            return existing
+        }
+        let plan = DayPlan(date: Calendar.current.startOfDay(for: Date()))
+        context.insert(plan)
+        return plan
+    }
+}
