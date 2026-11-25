@@ -40,6 +40,7 @@
 - **Захват** (главный, открывается по умолчанию) — поле ввода + кнопка диктофона.
 - **Сегодня** — план дня: фокусы, мелочи, расписание блоками.
 - **Проекты** — список проектов: дедлайн, следующий шаг, статус.
+- **Детали проекта** — редактируемые поля проекта + список шагов: добавление (название, опциональный дедлайн), отметка «выполнен», правка дедлайна, удаление.
 - **Парковка** — идеи и «когда-нибудь» (чтобы голова отпускала).
 - **Вечерний итог** — свайп-разбор дня.
 
@@ -47,11 +48,13 @@
 
 - `User` (id, настройки, таймзона)
 - `Capture` (id, raw_text, created_at, processed: bool)
-- `Task` (id, project_id?, title, notes, deadline?, priority, status, estimate_min?, source_capture_id)
+- `TaskItem` (id, project_id?, title, notes, deadline?, priority, status, estimate_min?, source_capture_id)
 - `Project` (id, title, deadline?, status, next_step?, context_notes)
 - `Habit` (id, title, frequency_rule, active)
 - `DayPlan` (id, date, items: [task_id, time_block, approved: bool])
 - `Idea` (парковка) (id, title, notes, created_at, status)
+
+Шаг проекта — это `TaskItem` с заполненным `project_id`: название, опциональный дедлайн (можно менять), статус (закрывается при завершении). Напоминания по шагам — через локальные пуши.
 
 Принцип: всё рождается из `Capture` — сырой ввод никогда не теряется, AI-разбор всегда можно пересмотреть.
 
