@@ -14,6 +14,7 @@ struct TodayView: View {
     @Query private var plans: [DayPlan]
 
     @State private var showAddTask = false
+    @State private var showEveningReview = false
     @State private var editingTask: TaskItem?
 
     init() {
@@ -106,6 +107,13 @@ struct TodayView: View {
             }
             .navigationTitle("Сегодня")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showEveningReview = true
+                    } label: {
+                        Label("Вечерний итог", systemImage: "moon.stars")
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showAddTask = true
@@ -113,6 +121,9 @@ struct TodayView: View {
                         Label("Новая задача", systemImage: "plus")
                     }
                 }
+            }
+            .sheet(isPresented: $showEveningReview) {
+                EveningReviewView()
             }
             .sheet(isPresented: $showAddTask) {
                 TaskEditView()
