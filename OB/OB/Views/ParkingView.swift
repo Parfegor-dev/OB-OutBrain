@@ -43,6 +43,7 @@ struct ParkingView: View {
                             .swipeActions(edge: .leading) {
                                 Button {
                                     idea.status = idea.status == .ready ? .parked : .ready
+                                    try? modelContext.save()
                                 } label: {
                                     Label(
                                         idea.status == .ready ? "В парковку" : "Созрела",
@@ -78,6 +79,7 @@ struct ParkingView: View {
         let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         modelContext.insert(Idea(title: trimmed))
+        try? modelContext.save()
         newTitle = ""
     }
 
@@ -85,6 +87,7 @@ struct ParkingView: View {
         for index in offsets {
             modelContext.delete(ideas[index])
         }
+        try? modelContext.save()
     }
 }
 

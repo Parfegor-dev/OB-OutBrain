@@ -75,6 +75,7 @@ struct CaptureView: View {
     private func save() {
         guard !trimmedText.isEmpty else { return }
         modelContext.insert(Capture(rawText: trimmedText))
+        try? modelContext.save()
         text = ""
         withAnimation { showSavedConfirmation = true }
         Task {
