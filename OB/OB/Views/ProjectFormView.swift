@@ -18,6 +18,7 @@ struct ProjectFormView: View {
     @State private var nextStep = ""
     @State private var status: ProjectStatus = .active
     @State private var contextNotes = ""
+    @State private var reminders: [Reminder] = []
 
     var body: some View {
         NavigationStack {
@@ -28,7 +29,17 @@ struct ProjectFormView: View {
                 Section {
                     Toggle("Дедлайн", isOn: $hasDeadline)
                     if hasDeadline {
-                        DatePicker("Дата", selection: $deadline, displayedComponents: .date)
+                        DatePicker("Дата и время", selection: $deadline, displayedComponents: [.date, .hourAndMinute])
+                        NavigationLink {
+                            RemindersView(reminders: $reminders, parentTitle: title, deadline: deadline)
+                        } label: {
+                            HStack {
+                                Text("Напоминания")
+                                Spacer()
+                                Text("\(reminders.count)")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
                 Section {
@@ -54,6 +65,8 @@ struct ProjectFormView: View {
                         .disabled(trimmedTitle.isEmpty)
                 }
             }
+            .onChange(of: hasDeadline) { recomputeReminders() }
+            .onChange(of: deadline) { recomputeReminders() }
         }
     }
 
@@ -65,16 +78,23 @@ struct ProjectFormView: View {
         nextStep.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private func recomputeReminders() {
+        reminders = Reminder.recomputed(current: reminders, deadline: hasDeadline ? deadline : nil)
+    }
+
     private func save() {
         guard !trimmedTitle.isEmpty else { return }
-        modelContext.insert(Project(
+        let project = Project(
             title: trimmedTitle,
             deadline: hasDeadline ? deadline : nil,
             status: status,
             nextStep: trimmedNextStep.isEmpty ? nil : trimmedNextStep,
-            contextNotes: contextNotes
-        ))
+            contextNotes: contextNotes,
+            reminders: reminders
+        )
+        modelContext.insert(project)
         try? modelContext.save()
+        NotificationService.syncReminders(for: project)
         dismiss()
     }
 }

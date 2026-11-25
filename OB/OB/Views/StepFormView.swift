@@ -18,6 +18,7 @@ struct StepFormView: View {
     @State private var title: String
     @State private var hasDeadline: Bool
     @State private var deadline: Date
+    @State private var reminders: [Reminder]
 
     init(projectId: UUID? = nil, step: TaskItem? = nil) {
         self.projectId = projectId
@@ -25,6 +26,7 @@ struct StepFormView: View {
         _title = State(initialValue: step?.title ?? "")
         _hasDeadline = State(initialValue: step.map { $0.deadline != nil } ?? false)
         _deadline = State(initialValue: step?.deadline ?? Date())
+        _reminders = State(initialValue: step?.reminders ?? [])
     }
 
     var body: some View {
@@ -33,7 +35,17 @@ struct StepFormView: View {
                 TextField("Название", text: $title)
                 Toggle("Дедлайн", isOn: $hasDeadline)
                 if hasDeadline {
-                    DatePicker("Дата", selection: $deadline, displayedComponents: .date)
+                    DatePicker("Дата и время", selection: $deadline, displayedComponents: [.date, .hourAndMinute])
+                    NavigationLink {
+                        RemindersView(reminders: $reminders, parentTitle: title, deadline: deadline)
+                    } label: {
+                        HStack {
+                            Text("Напоминания")
+                            Spacer()
+                            Text("\(reminders.count)")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
             .navigationTitle(step == nil ? "Новый шаг" : "Шаг")
@@ -47,19 +59,31 @@ struct StepFormView: View {
                         .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
+            .onChange(of: hasDeadline) { recomputeReminders() }
+            .onChange(of: deadline) { recomputeReminders() }
         }
+    }
+
+    private func recomputeReminders() {
+        reminders = Reminder.recomputed(current: reminders, deadline: hasDeadline ? deadline : nil)
     }
 
     private func save() {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        let savedStep: TaskItem
         if let step {
             step.title = trimmed
             step.deadline = hasDeadline ? deadline : nil
+            step.reminders = reminders
+            savedStep = step
         } else {
-            modelContext.insert(TaskItem(title: trimmed, projectId: projectId, deadline: hasDeadline ? deadline : nil))
+            let newStep = TaskItem(title: trimmed, projectId: projectId, deadline: hasDeadline ? deadline : nil, reminders: reminders)
+            modelContext.insert(newStep)
+            savedStep = newStep
         }
         try? modelContext.save()
+        NotificationService.syncReminders(for: savedStep)
         dismiss()
     }
 }

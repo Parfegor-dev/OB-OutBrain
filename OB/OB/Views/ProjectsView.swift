@@ -92,7 +92,9 @@ struct ProjectsView: View {
 
     private func delete(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(sortedProjects[index])
+            let project = sortedProjects[index]
+            NotificationService.cancelReminders(ownerId: project.id)
+            modelContext.delete(project)
         }
         try? modelContext.save()
     }

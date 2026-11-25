@@ -32,6 +32,9 @@ struct OBApp: App {
         WindowGroup {
             RootView()
                 .preferredColorScheme(.dark)
+                .task {
+                    NotificationService.requestAuthorization()
+                }
         }
         .modelContainer(sharedModelContainer)
     }

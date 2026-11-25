@@ -44,12 +44,16 @@ struct TodayView: View {
         planEntries.filter { $0.task.status != .done }
     }
 
+    private func byDeadline(_ lhs: PlanEntry, _ rhs: PlanEntry) -> Bool {
+        (lhs.task.deadline ?? .distantFuture) < (rhs.task.deadline ?? .distantFuture)
+    }
+
     private var focusEntries: [PlanEntry] {
-        activeEntries.filter { $0.task.priority == .high }
+        activeEntries.filter { $0.task.priority == .high }.sorted(by: byDeadline)
     }
 
     private var minorEntries: [PlanEntry] {
-        activeEntries.filter { $0.task.priority != .high }
+        activeEntries.filter { $0.task.priority != .high }.sorted(by: byDeadline)
     }
 
     private var doneCount: Int {
@@ -122,13 +126,13 @@ struct TodayView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showEveningReview) {
+            .sheet(isPresented: $showEveningReview, onDismiss: refreshNextStepNudge) {
                 EveningReviewView()
             }
-            .sheet(isPresented: $showAddTask) {
+            .sheet(isPresented: $showAddTask, onDismiss: refreshNextStepNudge) {
                 TaskEditView()
             }
-            .sheet(item: $editingTask) { task in
+            .sheet(item: $editingTask, onDismiss: refreshNextStepNudge) { task in
                 TaskEditView(task: task)
             }
         }
@@ -150,7 +154,7 @@ struct TodayView: View {
                     .strikethrough(entry.task.status == .done)
                 HStack(spacing: 8) {
                     if let deadline = entry.task.deadline {
-                        Label(deadline.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
+                        Label(deadline.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
                     }
                     if let estimate = entry.task.estimateMin {
                         Label("\(estimate) мин", systemImage: "clock")
@@ -181,7 +185,7 @@ struct TodayView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)
                 if let deadline = task.deadline {
-                    Label(deadline.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
+                    Label(deadline.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -217,22 +221,37 @@ struct TodayView: View {
             task.completedAt = Date()
         }
         try? modelContext.save()
+        NotificationService.syncReminders(for: task)
+        refreshNextStepNudge()
     }
 
     private func addToPlan(_ task: TaskItem) {
         let plan = DayPlan.today(in: modelContext)
         plan.items.append(PlanItem(taskId: task.id, timeBlock: nil, approved: true))
         try? modelContext.save()
+        refreshNextStepNudge()
     }
 
     private func removeFromPlan(_ task: TaskItem) {
         todayPlan?.items.removeAll { $0.taskId == task.id }
         try? modelContext.save()
+        refreshNextStepNudge()
     }
 
     private func deleteTask(_ task: TaskItem) {
+        NotificationService.cancelReminders(ownerId: task.id)
         modelContext.delete(task)
         try? modelContext.save()
+    }
+
+    private func refreshNextStepNudge() {
+        let open = planEntries.filter { $0.task.status != .done }
+        let next = open.first(where: { $0.task.priority == .high }) ?? open.first
+        if let next {
+            NotificationService.scheduleNextStep(title: next.task.title, estimateMin: next.task.estimateMin)
+        } else {
+            NotificationService.cancelNextStep()
+        }
     }
 }
 

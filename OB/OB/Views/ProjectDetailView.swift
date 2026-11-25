@@ -19,6 +19,7 @@ struct ProjectDetailView: View {
     @State private var deadline: Date
     @State private var nextStep: String
     @State private var contextNotes: String
+    @State private var reminders: [Reminder]
 
     @Query private var steps: [TaskItem]
 
@@ -33,6 +34,7 @@ struct ProjectDetailView: View {
         _deadline = State(initialValue: project.deadline ?? Date())
         _nextStep = State(initialValue: project.nextStep ?? "")
         _contextNotes = State(initialValue: project.contextNotes)
+        _reminders = State(initialValue: project.reminders)
         let projectId = project.id
         _steps = Query(filter: #Predicate<TaskItem> { step in
             step.projectId == projectId
@@ -59,7 +61,17 @@ struct ProjectDetailView: View {
                 }
                 Toggle("Дедлайн", isOn: $hasDeadline)
                 if hasDeadline {
-                    DatePicker("Дата", selection: $deadline, displayedComponents: .date)
+                    DatePicker("Дата и время", selection: $deadline, displayedComponents: [.date, .hourAndMinute])
+                    NavigationLink {
+                        RemindersView(reminders: $reminders, parentTitle: title, deadline: deadline)
+                    } label: {
+                        HStack {
+                            Text("Напоминания")
+                            Spacer()
+                            Text("\(reminders.count)")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 TextField("Следующий шаг", text: $nextStep)
             }
@@ -82,7 +94,7 @@ struct ProjectDetailView: View {
                             Text(step.title)
                                 .strikethrough(step.status == .done)
                             if let deadline = step.deadline {
-                                Text(deadline.formatted(date: .abbreviated, time: .omitted))
+                                Text(deadline.formatted(date: .abbreviated, time: .shortened))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -119,6 +131,12 @@ struct ProjectDetailView: View {
         .sheet(item: $editingStep) { step in
             StepFormView(step: step)
         }
+        .onChange(of: hasDeadline) { recomputeReminders() }
+        .onChange(of: deadline) { recomputeReminders() }
+    }
+
+    private func recomputeReminders() {
+        reminders = Reminder.recomputed(current: reminders, deadline: hasDeadline ? deadline : nil)
     }
 
     private func saveProject() {
@@ -130,17 +148,22 @@ struct ProjectDetailView: View {
         project.deadline = hasDeadline ? deadline : nil
         project.nextStep = trimmedNextStep.isEmpty ? nil : trimmedNextStep
         project.contextNotes = contextNotes
+        project.reminders = reminders
         try? modelContext.save()
+        NotificationService.syncReminders(for: project)
     }
 
     private func toggleDone(_ step: TaskItem) {
         step.status = step.status == .done ? .todo : .done
         try? modelContext.save()
+        NotificationService.syncReminders(for: step)
     }
 
     private func deleteSteps(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(sortedSteps[index])
+            let step = sortedSteps[index]
+            NotificationService.cancelReminders(ownerId: step.id)
+            modelContext.delete(step)
         }
         try? modelContext.save()
     }

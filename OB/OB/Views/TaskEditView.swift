@@ -23,6 +23,7 @@ struct TaskEditView: View {
     @State private var estimateText: String
     @State private var projectId: UUID?
     @State private var notes: String
+    @State private var reminders: [Reminder]
 
     init(task: TaskItem? = nil) {
         self.task = task
@@ -33,6 +34,7 @@ struct TaskEditView: View {
         _estimateText = State(initialValue: task?.estimateMin.map(String.init) ?? "")
         _projectId = State(initialValue: task?.projectId)
         _notes = State(initialValue: task?.notes ?? "")
+        _reminders = State(initialValue: task?.reminders ?? [])
     }
 
     private var activeProjects: [Project] {
@@ -53,7 +55,17 @@ struct TaskEditView: View {
                     }
                     Toggle("Дедлайн", isOn: $hasDeadline)
                     if hasDeadline {
-                        DatePicker("Дата", selection: $deadline, displayedComponents: .date)
+                        DatePicker("Дата и время", selection: $deadline, displayedComponents: [.date, .hourAndMinute])
+                        NavigationLink {
+                            RemindersView(reminders: $reminders, parentTitle: title, deadline: deadline)
+                        } label: {
+                            HStack {
+                                Text("Напоминания")
+                                Spacer()
+                                Text("\(reminders.count)")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                     TextField("Оценка, мин (необязательно)", text: $estimateText)
                         .keyboardType(.numberPad)
@@ -82,12 +94,19 @@ struct TaskEditView: View {
                         .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
+            .onChange(of: hasDeadline) { recomputeReminders() }
+            .onChange(of: deadline) { recomputeReminders() }
         }
+    }
+
+    private func recomputeReminders() {
+        reminders = Reminder.recomputed(current: reminders, deadline: hasDeadline ? deadline : nil)
     }
 
     private func save() {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        let savedTask: TaskItem
         if let task {
             task.title = trimmed
             task.priority = priority
@@ -95,6 +114,8 @@ struct TaskEditView: View {
             task.estimateMin = Int(estimateText)
             task.projectId = projectId
             task.notes = notes
+            task.reminders = reminders
+            savedTask = task
         } else {
             let newTask = TaskItem(
                 title: trimmed,
@@ -102,13 +123,16 @@ struct TaskEditView: View {
                 projectId: projectId,
                 deadline: hasDeadline ? deadline : nil,
                 priority: priority,
-                estimateMin: Int(estimateText)
+                estimateMin: Int(estimateText),
+                reminders: reminders
             )
             modelContext.insert(newTask)
             let plan = DayPlan.today(in: modelContext)
             plan.items.append(PlanItem(taskId: newTask.id, timeBlock: nil, approved: true))
+            savedTask = newTask
         }
         try? modelContext.save()
+        NotificationService.syncReminders(for: savedTask)
         dismiss()
     }
 }

@@ -78,9 +78,11 @@ struct DoneTasksView: View {
         task.completedAt = nil
         DayPlan.existingToday(in: modelContext)?.items.removeAll { $0.taskId == task.id }
         try? modelContext.save()
+        NotificationService.syncReminders(for: task)
     }
 
     private func deleteTask(_ task: TaskItem) {
+        NotificationService.cancelReminders(ownerId: task.id)
         modelContext.delete(task)
         try? modelContext.save()
     }
