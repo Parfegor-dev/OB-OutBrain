@@ -38,7 +38,7 @@
 ## 4. Экраны MVP
 
 - **Захват** (главный, открывается по умолчанию) — поле ввода. MVP — только текст: голос закрывает системная диктовка на клавиатуре iOS.
-- **Сегодня** — план дня: фокусы, мелочи, расписание блоками.
+- **Сегодня** — план дня: фокусы, мелочи, расписание блоками. Тап по задаче — редактирование. Выполненные задачи уходят вниз в секцию «Выполнено» (сортировка по дате выполнения, свежие сверху).
 - **Проекты** — список проектов: дедлайн, следующий шаг, статус.
 - **Детали проекта** — редактируемые поля проекта + список шагов: добавление (название, опциональный дедлайн), отметка «выполнен», правка дедлайна, удаление.
 - **Парковка** — идеи и «когда-нибудь» (чтобы голова отпускала).
@@ -48,7 +48,7 @@
 
 - `User` (id, настройки, таймзона)
 - `Capture` (id, raw_text, created_at, processed: bool)
-- `TaskItem` (id, project_id?, title, notes, deadline?, priority, status, estimate_min?, source_capture_id)
+- `TaskItem` (id, project_id?, title, notes, deadline?, priority, status, estimate_min?, source_capture_id, completed_at?)
 - `Project` (id, title, deadline?, status, next_step?, context_notes)
 - `Habit` (id, title, frequency_rule, active)
 - `DayPlan` (id, date, items: [task_id, time_block, approved: bool])
